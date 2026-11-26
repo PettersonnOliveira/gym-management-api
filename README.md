@@ -20,7 +20,9 @@ A Gym Management API resolve isso centralizando o cadastro de alunos, treinos e 
 - Spring Boot
 - Spring Web (REST API)
 - Spring Data JPA
-- MySQL
+- Spring Security
+- JWT (JJWT)
+- PostgreSQL
 - Bean Validation (validação de dados de entrada)
 - Maven
 
@@ -65,6 +67,15 @@ Enrollment é a entidade intermediária que resolve esse relacionamento N:N, gua
 
 📌 Endpoints disponíveis
 
+Health
+Ação	Método	Rota
+Verificar disponibilidade	GET	/health ou /api/health
+
+Auth
+Ação	Método	Rota
+Registrar usuário	POST	/auth/register
+Login	POST	/auth/login
+
 Members
 Ação	Método	Rota
 Cadastrar aluno	POST	/members
@@ -86,6 +97,13 @@ Ação	Método	Rota
 Matricular aluno em treino	POST	/enrollments
 Listar matrículas	GET	/enrollments
 Cancelar matrícula	DELETE	/enrollments/{id}
+
+Permissões
+
+- `/health` e `/api/health` são públicos e retornam `200 OK`
+- `POST /auth/register` cria usuários com papel `MEMBER`
+- `GET` em members, workouts e enrollments exige token JWT de `ADMIN` ou `MEMBER`
+- `POST`, `PUT` e `DELETE` exigem token JWT de `ADMIN`
 
 Exemplo — Matricular aluno em treino
 
@@ -132,6 +150,7 @@ A API utiliza exceções customizadas, capturadas globalmente através de @RestC
 
 ResourceNotFoundException → devolve 404 Not Found (recurso não encontrado pelo ID)
 BusinessRuleException → devolve 400 Bad Request (regra de negócio violada, como matrícula duplicada)
+InvalidCredentialsException → devolve 401 Unauthorized (login com credenciais inválidas)
 
 ✅ Validações
 
@@ -146,7 +165,7 @@ Requisições que violam essas regras retornam 400 Bad Request automaticamente.
 
 Pré-requisitos
 - Java 21 instalado
-- MySQL rodando localmente
+- PostgreSQL rodando localmente
 - Maven (ou usar o mvnw incluso no projeto)
 
 Passos
@@ -156,16 +175,26 @@ Clone o repositório
 git clone <url-do-repositorio>
 ```
 
-Configure o banco de dados no arquivo `src/main/resources/application.properties`:
+Configure as variáveis de ambiente antes de executar:
 
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/gym_management?createDatabaseIfNotExist=true
-spring.datasource.username=SEU_USUARIO
-spring.datasource.password=SUA_SENHA
-spring.jpa.hibernate.ddl-auto=update
+```bash
+DB_URL=jdbc:postgresql://localhost:5432/gym_management
+DB_USER=postgres
+DB_PASSWORD=SUA_SENHA_LOCAL
+JWT_SECRET=SEGREDO_BASE64_COM_PELO_MENOS_32_BYTES
+ADMIN_EMAIL=admin@gym.com
+ADMIN_PASSWORD=SENHA_DO_ADMIN
 ```
 
-⚠️ Este arquivo contém credenciais sensíveis e não deveria ser versionado com dados reais em um projeto de produção.
+Para produção no Render com PostgreSQL do Aiven, configure no painel do Render:
+
+- `DB_URL`: URL JDBC do Aiven, normalmente no formato `jdbc:postgresql://HOST:PORT/DB?sslmode=require`
+- `DB_USER` e `DB_PASSWORD`: credenciais do banco
+- `JWT_SECRET`: chave Base64 com pelo menos 32 bytes
+- `ADMIN_EMAIL` e `ADMIN_PASSWORD`: usuário admin inicial
+- `PORT`: o Render define automaticamente; a aplicação usa `${PORT:8080}`
+
+O `JWT_SECRET` deve ser uma chave Base64 com pelo menos 32 bytes. O usuário definido por `ADMIN_EMAIL`/`ADMIN_PASSWORD` é criado automaticamente na primeira execução com papel `ADMIN`.
 
 Execute a aplicação:
 
@@ -181,7 +210,6 @@ Recomenda-se o uso do Postman ou Insomnia para testar os endpoints.
 
 🗺️ Próximos passos (roadmap)
 
- - Autenticação e autorização com Spring Security + JWT
  - Horários e disponibilidade de treinos
  - Histórico de frequência (check-in) do aluno
 

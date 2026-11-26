@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:gym_management_test;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+jwt:
+  secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+  expiration-ms: 3600000
+
+app:
+  admin:
+    email: ""
+    password: ""
