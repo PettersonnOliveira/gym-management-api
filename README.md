@@ -25,6 +25,8 @@ A Gym Management API resolve isso centralizando o cadastro de alunos, treinos e 
 - PostgreSQL
 - Bean Validation (validação de dados de entrada)
 - Maven
+- Docker (Render)
+- Frontend estático (Cloudflare Pages)
 
 🏗️ Arquitetura
 
@@ -171,6 +173,28 @@ O frontend em HTML, CSS e JavaScript puro fica em `src/main/resources/static` (`
 - Adicione o domínio do Pages em `CORS_ALLOWED_ORIGINS` no Render (ex.: `https://gym.pages.dev`).
 - Contas criadas pelo formulário recebem o papel `USER` (somente leitura). Para acesso administrativo, configure `ADMIN_EMAIL` e `ADMIN_PASSWORD` no Render; o usuário `ADMIN` é criado no primeiro startup.
 
+🐳 Docker e deploy (Render)
+
+O `Dockerfile` na raiz do projeto é um build multi-stage:
+- Stage 1: `maven:3.9.9-eclipse-temurin-21-alpine` compila o projeto com `./mvnw clean package -DskipTests -B`
+- Stage 2: `eclipse-temurin:21-jre-alpine` executa o JAR com usuário não-root (`appuser`) e heap limitado a 384 MB
+
+Construir e executar localmente:
+
+```bash
+docker build -t gym-management-api .
+docker run -p 8080:8080 --env-file .env gym-management-api
+```
+
+No Render (serviço Docker):
+- Caminho do Dockerfile: raiz do repositório
+- Build command: `docker build -t gym-management-api .`
+- Porta: `8080`
+- Health check: `GET /health`
+- Variáveis de ambiente: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `CORS_ALLOWED_ORIGINS`, `PORT`
+
+O frontend estático em `src/main/resources/static` é servido pelo Spring Boot e publicado separadamente no Cloudflare Pages.
+
 ⚙️ Como rodar o projeto localmente
 
 Pré-requisitos
@@ -224,7 +248,18 @@ Testando
 
 Recomenda-se o uso do Postman ou Insomnia para testar os endpoints.
 
-🗺️ Próximos passos (roadmap)
+🧪 Testes automatizados
+
+```bash
+./mvnw test
+```
+
+A suíte atual cobre:
+- Contexto da aplicação (`GymManagementApiApplicationTests`)
+- Validação do `JwtService` (`Security/JwtServiceTest`)
+- Integração do frontend estático com a segurança da API (`StaticFrontendIntegrationTest`)
+
+Todos os testes utilizam banco H2 em memória, garantindo que nada tente acessar o banco de produção.🗺️ Próximos passos (roadmap)
 
  - Horários e disponibilidade de treinos
  - Histórico de frequência (check-in) do aluno
