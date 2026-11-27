@@ -30,7 +30,7 @@ public class User {
 
     public enum Role {
         ADMIN,
-        MEMBER
+        USER
     }
 
     public User() {

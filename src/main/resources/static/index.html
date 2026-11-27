@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Gym Management - gerencie alunos, treinos e matriculas." />
+  <title>Gym Management</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%8B%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="cold-start-banner" class="banner" role="status" aria-live="polite" hidden>
+    <span class="spinner" aria-hidden="true"></span>
+    <span>Iniciando o servidor na nuvem... O primeiro acesso pode levar até 50 segundos.</span>
+  </div>
+
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- ================= Autenticacao ================= -->
+  <main id="auth-view" class="auth-view">
+    <section class="auth-card" aria-labelledby="auth-title">
+      <header class="auth-header">
+        <div class="brand-mark" aria-hidden="true">🏋️</div>
+        <h1 id="auth-title">Gym Management</h1>
+        <p class="muted">Gerencie alunos, treinos e matrículas em um só lugar.</p>
+      </header>
+
+      <div class="tabs" role="tablist" aria-label="Autenticação">
+        <button type="button" class="tab active" data-auth-tab="login" role="tab" aria-selected="true">Entrar</button>
+        <button type="button" class="tab" data-auth-tab="register" role="tab" aria-selected="false">Criar conta</button>
+      </div>
+
+      <form id="login-form" class="auth-form" novalidate>
+        <label for="login-email">E-mail
+          <input type="email" id="login-email" name="email" autocomplete="email" placeholder="voce@exemplo.com" required />
+        </label>
+        <label for="login-password">Senha
+          <input type="password" id="login-password" name="password" autocomplete="current-password" placeholder="Sua senha" minlength="6" required />
+        </label>
+        <p class="form-error" id="login-error" role="alert"></p>
+        <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+      </form>
+
+      <form id="register-form" class="auth-form" novalidate hidden>
+        <label for="register-email">E-mail
+          <input type="email" id="register-email" name="email" autocomplete="email" placeholder="voce@exemplo.com" required />
+        </label>
+        <label for="register-password">Senha
+          <input type="password" id="register-password" name="password" autocomplete="new-password" placeholder="Mínimo de 6 caracteres" minlength="6" required />
+        </label>
+        <label for="register-confirm">Confirmar senha
+          <input type="password" id="register-confirm" name="confirm" autocomplete="new-password" placeholder="Repita a senha" minlength="6" required />
+        </label>
+        <p class="form-error" id="register-error" role="alert"></p>
+        <button type="submit" class="btn btn-primary btn-block">Criar conta</button>
+        <p class="hint">Novas contas recebem o perfil <strong>Usuário</strong> (somente leitura).</p>
+      </form>
+    </section>
+  </main>
+
+  <!-- ================= Aplicacao ================= -->
+  <div id="app-view" class="app-view" hidden>
+    <header class="topbar">
+      <div class="brand">🏋️ <span>Gym Management</span></div>
+
+      <nav class="main-nav" aria-label="Seções">
+        <button type="button" class="nav-link active" data-section="dashboard">Dashboard</button>
+        <button type="button" class="nav-link" data-section="members">Alunos</button>
+        <button type="button" class="nav-link" data-section="workouts">Treinos</button>
+        <button type="button" class="nav-link" data-section="enrollments">Matrículas</button>
+      </nav>
+
+      <div class="user-box">
+        <span id="user-email" class="user-email" title="Usuário logado"></span>
+        <span id="user-role" class="badge badge-user">Usuário</span>
+        <button type="button" id="logout-btn" class="btn btn-ghost btn-sm">Sair</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- Dashboard -->
+      <section id="section-dashboard" class="section active" aria-labelledby="dashboard-title">
+        <div class="section-head">
+          <div>
+            <h2 id="dashboard-title">Visão geral</h2>
+            <p class="muted">Resumo do seu sistema de academia.</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="refresh-btn">Atualizar</button>
+        </div>
+
+        <div class="stats">
+          <article class="stat-card">
+            <span class="stat-label">Alunos</span>
+            <strong class="stat-value" id="stat-members">—</strong>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Treinos</span>
+            <strong class="stat-value" id="stat-workouts">—</strong>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Matrículas</span>
+            <strong class="stat-value" id="stat-enrollments">—</strong>
+          </article>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Matrículas recentes</h3>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Aluno</th>
+                  <th>Treino</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+              <tbody id="recent-enrollments-body"></tbody>
+            </table>
+            <p class="empty" id="recent-enrollments-empty" hidden>Nenhuma matrícula registrada ainda.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Alunos -->
+      <section id="section-members" class="section" aria-labelledby="members-title">
+        <div class="section-head">
+          <div>
+            <h2 id="members-title">Alunos</h2>
+            <p class="muted">Cadastro de alunos da academia.</p>
+          </div>
+          <button type="button" class="btn btn-primary admin-only" id="new-member-btn" hidden>+ Novo aluno</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Telefone</th>
+                <th class="actions-col">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="members-body"></tbody>
+          </table>
+          <p class="empty" id="members-empty" hidden>Nenhum aluno cadastrado.</p>
+        </div>
+      </section>
+
+      <!-- Treinos -->
+      <section id="section-workouts" class="section" aria-labelledby="workouts-title">
+        <div class="section-head">
+          <div>
+            <h2 id="workouts-title">Treinos</h2>
+            <p class="muted">Treinos disponíveis para matrícula.</p>
+          </div>
+          <button type="button" class="btn btn-primary admin-only" id="new-workout-btn" hidden>+ Novo treino</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Treino</th>
+                <th>Descrição</th>
+                <th>Duração</th>
+                <th class="actions-col">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="workouts-body"></tbody>
+          </table>
+          <p class="empty" id="workouts-empty" hidden>Nenhum treino cadastrado.</p>
+        </div>
+      </section>
+
+      <!-- Matriculas -->
+      <section id="section-enrollments" class="section" aria-labelledby="enrollments-title">
+        <div class="section-head">
+          <div>
+            <h2 id="enrollments-title">Matrículas</h2>
+            <p class="muted">Alunos matriculados nos treinos.</p>
+          </div>
+          <button type="button" class="btn btn-primary admin-only" id="new-enrollment-btn" hidden>+ Nova matrícula</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Aluno</th>
+                <th>Treino</th>
+                <th>Data</th>
+                <th class="actions-col">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="enrollments-body"></tbody>
+          </table>
+          <p class="empty" id="enrollments-empty" hidden>Nenhuma matrícula registrada.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ================= Modais ================= -->
+  <dialog id="member-dialog" class="modal" aria-labelledby="member-dialog-title">
+    <form id="member-form" class="modal-form" novalidate>
+      <header class="modal-head">
+        <h3 id="member-dialog-title">Novo aluno</h3>
+        <button type="button" class="icon-btn" data-close-dialog="member-dialog" aria-label="Fechar">×</button>
+      </header>
+      <label for="member-name">Nome
+        <input type="text" id="member-name" name="name" required placeholder="Nome completo" />
+      </label>
+      <label for="member-email">E-mail
+        <input type="email" id="member-email" name="email" required placeholder="aluno@exemplo.com" />
+      </label>
+      <label for="member-phone">Telefone
+        <input type="tel" id="member-phone" name="phone" placeholder="(11) 99999-9999" />
+      </label>
+      <p class="form-error" id="member-error" role="alert"></p>
+      <footer class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close-dialog="member-dialog">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="workout-dialog" class="modal" aria-labelledby="workout-dialog-title">
+    <form id="workout-form" class="modal-form" novalidate>
+      <header class="modal-head">
+        <h3 id="workout-dialog-title">Novo treino</h3>
+        <button type="button" class="icon-btn" data-close-dialog="workout-dialog" aria-label="Fechar">×</button>
+      </header>
+      <label for="workout-name">Nome
+        <input type="text" id="workout-name" name="name" required placeholder="Ex.: Treino de força" />
+      </label>
+      <label for="workout-description">Descrição
+        <textarea id="workout-description" name="description" rows="3" placeholder="Descrição do treino"></textarea>
+      </label>
+      <label for="workout-duration">Duração (minutos)
+        <input type="number" id="workout-duration" name="duration" min="1" step="1" required placeholder="60" />
+      </label>
+      <p class="form-error" id="workout-error" role="alert"></p>
+      <footer class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close-dialog="workout-dialog">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="enrollment-dialog" class="modal" aria-labelledby="enrollment-dialog-title">
+    <form id="enrollment-form" class="modal-form" novalidate>
+      <header class="modal-head">
+        <h3 id="enrollment-dialog-title">Nova matrícula</h3>
+        <button type="button" class="icon-btn" data-close-dialog="enrollment-dialog" aria-label="Fechar">×</button>
+      </header>
+      <label for="enrollment-member">Aluno
+        <select id="enrollment-member" name="memberId" required></select>
+      </label>
+      <label for="enrollment-workout">Treino
+        <select id="enrollment-workout" name="workoutId" required></select>
+      </label>
+      <p class="form-error" id="enrollment-error" role="alert"></p>
+      <footer class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-close-dialog="enrollment-dialog">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Matricular</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <script src="js/app.js" defer></script>
+</body>
+</html>

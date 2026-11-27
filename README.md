@@ -101,8 +101,8 @@ Cancelar matrícula	DELETE	/enrollments/{id}
 Permissões
 
 - `/health` e `/api/health` são públicos e retornam `200 OK`
-- `POST /auth/register` cria usuários com papel `MEMBER`
-- `GET` em members, workouts e enrollments exige token JWT de `ADMIN` ou `MEMBER`
+- `POST /auth/register` cria usuários com papel `USER`
+- `GET` em members, workouts e enrollments exige token JWT de `ADMIN` ou `USER`
 - `POST`, `PUT` e `DELETE` exigem token JWT de `ADMIN`
 
 Exemplo — Matricular aluno em treino
@@ -161,6 +161,16 @@ memberId, workoutId → @NotNull
 
 Requisições que violam essas regras retornam 400 Bad Request automaticamente.
 
+🖥️ Frontend estático
+
+O frontend em HTML, CSS e JavaScript puro fica em `src/main/resources/static` (`index.html`, `css/styles.css`, `js/app.js`) e é servido automaticamente pelo Spring Boot em `http://localhost:8080`.
+
+- **Local:** a URL da API usa `window.location.origin` quando o host é `localhost` ou `127.0.0.1`.
+- **Produção (Cloudflare Pages):** edite a constante `RENDER_API_URL` em `js/app.js` com a URL do serviço no Render (sem barra no final, ex.: `https://gym-management-api.onrender.com`).
+- No Cloudflare Pages, publique a pasta `src/main/resources/static` como saída (não há etapa de build).
+- Adicione o domínio do Pages em `CORS_ALLOWED_ORIGINS` no Render (ex.: `https://gym.pages.dev`).
+- Contas criadas pelo formulário recebem o papel `USER` (somente leitura). Para acesso administrativo, configure `ADMIN_EMAIL` e `ADMIN_PASSWORD` no Render; o usuário `ADMIN` é criado no primeiro startup.
+
 ⚙️ Como rodar o projeto localmente
 
 Pré-requisitos
@@ -175,7 +185,11 @@ Clone o repositório
 git clone <url-do-repositorio>
 ```
 
-Configure as variáveis de ambiente antes de executar:
+Copie o arquivo de exemplo e preencha as credenciais locais (o `.env` é ignorado pelo git e carregado automaticamente):
+
+```bash
+cp .env.example .env
+```
 
 ```bash
 DB_URL=jdbc:postgresql://localhost:5432/gym_management
@@ -184,6 +198,7 @@ DB_PASSWORD=SUA_SENHA_LOCAL
 JWT_SECRET=SEGREDO_BASE64_COM_PELO_MENOS_32_BYTES
 ADMIN_EMAIL=admin@gym.com
 ADMIN_PASSWORD=SENHA_DO_ADMIN
+CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 Para produção no Render com PostgreSQL do Aiven, configure no painel do Render:
@@ -192,9 +207,10 @@ Para produção no Render com PostgreSQL do Aiven, configure no painel do Render
 - `DB_USER` e `DB_PASSWORD`: credenciais do banco
 - `JWT_SECRET`: chave Base64 com pelo menos 32 bytes
 - `ADMIN_EMAIL` e `ADMIN_PASSWORD`: usuário admin inicial
+- `CORS_ALLOWED_ORIGINS`: origens do frontend separadas por vírgula (ex.: `https://seu-frontend.onrender.com`)
 - `PORT`: o Render define automaticamente; a aplicação usa `${PORT:8080}`
 
-O `JWT_SECRET` deve ser uma chave Base64 com pelo menos 32 bytes. O usuário definido por `ADMIN_EMAIL`/`ADMIN_PASSWORD` é criado automaticamente na primeira execução com papel `ADMIN`.
+O `JWT_SECRET` deve ser uma chave Base64 com pelo menos 32 caracteres e decodificar para pelo menos 32 bytes. O usuário definido por `ADMIN_EMAIL`/`ADMIN_PASSWORD` é criado automaticamente na primeira execução com papel `ADMIN`.
 
 Execute a aplicação:
 

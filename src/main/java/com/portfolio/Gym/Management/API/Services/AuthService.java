@@ -34,7 +34,7 @@ public class AuthService {
         User user = new User(
                 email,
                 passwordEncoder.encode(inputData.password()),
-                User.Role.MEMBER
+                User.Role.USER
         );
         User savedUser = userRepository.save(user);
         return toResponse(savedUser);
